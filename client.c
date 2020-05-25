@@ -16,10 +16,10 @@
 #define SA struct sockaddr
 
 volatile sig_atomic_t flag = 0;
-char string[2048];
-char name[32];
-int sockfd=0;
-
+char string[5000];
+char name[32],rno[32],post[32];
+int sockfd=0,action=0;
+long int array_size = 1048576;				// 1048576 bits == 1 MB
 void str_overwite_stdout()
 {
 	printf("\r%s","> ");
@@ -43,45 +43,103 @@ void ctrl_c(){
 }
 
 void send_f(){
-	char buffer[2048] = {};
-	char msg[2048+35] = {};
+	char buffer[5000] = {};
+	char msg[5000+35] = {};
 	while(1){
 		str_overwite_stdout();
-		gets(buffer,2048);
-		str_trim(buffer,2048);
-
-		if(strcmp(buffer,"exit") == 0){
-			break;
-		}else{
-			if(strcmp(buffer,"set-admin")==0 || strcmp(buffer,"unset-admin")==0){
-				send(sockfd,buffer,strlen(buffer),0);
+		fgets(buffer,5000,stdin);
+		str_trim(buffer,5000);
+		if(!action){
+			if(strcmp(buffer,"exit") == 0){
+				break;
 			}else{
-				sprintf(msg,"%s : %s\n",name,buffer);
-				send(sockfd,msg,strlen(msg),0);
+				if(strcmp(buffer,"set-admin")==0 || strcmp(buffer,"unset-admin")==0){
+					send(sockfd,buffer,strlen(buffer),0);
+				}else{
+					sprintf(msg,"%s : %s\n",name,buffer);
+					send(sockfd,msg,strlen(msg),0);
+				}
 			}
+		}else if(action==1){
+		
+			sprintf(msg,"%s : %s\n",name,buffer);
+			
+			FILE *fp;
+			fp = fopen(buffer,"r");
+			if(fp==NULL){
+				printf("[+] failed to open given file ! Please enter the File Name again :\n");
+				continue;
+			}
+			
+			send(sockfd,msg,strlen(msg),0);
+			
+			char nc,filearray[array_size];
+			int pointer=0;
+			printf("\n\nCode:\n");
+			while(fscanf(fp,"%c",&nc)!=EOF){
+				filearray[pointer]=nc;
+				pointer++;
+			}
+			printf("%s\n",filearray);
+			send(sockfd,filearray,strlen(filearray),0);
+			action=0;
+		}else if(action==2){
+		
+		recvFile();
+		action=0;
+		
 		}
-		bzero(buffer,2048);
-		bzero(msg,2048+35);
+		bzero(buffer,5000);
+		bzero(msg,5000+35);
 	}
 	ctrl_c(2);
 }
+
 void recv_f(){
-	char	msg[2048];
+	char	msg[5000];
 	while(1){
-		int r = recv(sockfd,msg,2048,0);
+		int r = recv(sockfd,msg,5000,0);
 		if(r>0){
 			printf("%s\n",msg);
+			if(strcmp(msg,"[+] Enter file name: ")==0)
+				action=1;
+			if(strcmp(msg,"$[+]$incoming$file$from$admi$")==0)
+				action=2;
 			str_overwite_stdout();
 		} else if(r==0){
 			break;
 		}
-		bzero(msg,2048);
+		bzero(msg,5000);
 	}
+}
+
+void recvFile(){
+		char fileName[5000],location[5000];
+		
+		recv(sockfd,fileName,5000,0);
+		
+			FILE *fp;
+			
+		system("mkdir Files");
+		
+		char filearray[array_size];
+		
+		printf("[+] new program file created...(%s)",fileName);
+		
+		sprintf(location,"Files/%s",fileName);
+		
+		fp = fopen(fileName,"w");
+		
+		recv(sockfd,filearray,sizeof(filearray),0);
+		
+		fprintf(fp,filearray);
+		
+		fclose(fp);
 }
 
 int main(int argc,char **argv)
 {
-	if(argc == 3 || argc == 2){;}
+	if(argc == 3 || argc == 2 || argc == 1){;}
 	else
 	{
 		printf("\nInvalid number of arguments passed...\n(hint : syntax is like './a.out <port_no> <ip_address>')\n");
@@ -89,16 +147,39 @@ int main(int argc,char **argv)
 	}
 
 	signal(SIGINT, ctrl_c);
-
+whoAreYou:
+	printf("Who are you? (1.teacher/2.student): ");
+	fgets(post,32,stdin);
+	str_trim(post,strlen(post));
+	if(strcmp(post,"student")==0 || strcmp(post,"Student")==0 || strcmp(post,"2")==0){
 	printf("Enter your name: ");
 	fgets(name,32,stdin);
 	str_trim(name,strlen(name));
-
+  printf("Enter your Roll Number: ");
+	fgets(rno,32,stdin);
+	str_trim(rno,strlen(rno));
+  }else if(strcmp(post,"teacher")==0 || strcmp(post,"Teacher")==0 || strcmp(post,"1")==0){
+  	printf("Enter your name: ");
+		fgets(name,32,stdin);
+		str_trim(name,strlen(name));
+		printf("name is %s\n",name);
+  }else{
+  	printf("please only select between given two options...\n");
+  	goto whoAreYou;
+  }
+  
 	if(strlen(name) > 32 || strlen(name) < 2)
 	{
 		printf("\nEnter the name correctly...\n");
 		return EXIT_FAILURE;
 	}
+	
+	if(strcmp(post,"student")==0 || strcmp(post,"Student")==0 || strcmp(post,"2")==0)
+		if(strlen(rno) > 32 || strlen(rno) < 1)
+		{
+			printf("\nEnter the roll number correctly...\n");
+			return EXIT_FAILURE;
+		}
 
 
 	struct sockaddr_in servaddr,cliaddr;
@@ -109,14 +190,17 @@ int main(int argc,char **argv)
 		return EXIT_FAILURE;
 	}
 	else
-		printf("\nsocket successfully created..\n");
+//		printf("\nsocket successfully created..\n");
 	servaddr.sin_family = AF_INET;
-	servaddr.sin_port = htons(atoi(argv[1]));
+	if(argc == 3 || argc == 2)
+  	servaddr.sin_port = htons(atoi(argv[1]));
+  else
+    servaddr.sin_port = htons(8080);
 	if(argc == 3)
 		servaddr.sin_addr.s_addr = inet_addr(argv[2]);
 	else
 	{
-		printf("\nserver ip not provided , so using local ip address...\n");
+//		printf("\nserver ip not provided , so using local ip address...\n");
 		servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	}
 
@@ -125,9 +209,16 @@ int main(int argc,char **argv)
 		printf("\nERROR: Connect()\nServer might be busy...\n");
 		return EXIT_FAILURE;
 	}
-	send(sockfd,name,sizeof(name),0);
-	printf("\nconnected to the server...\n");
-
+	
+	if(strcmp(post,"teacher")==0 || strcmp(post,"Teacher")==0 || strcmp(post,"1")==0)
+		strcpy(rno,"teacher");
+		
+			send(sockfd,name,sizeof(name),0);
+			send(sockfd,rno,sizeof(rno),0);
+	system("cls || clear");
+	
+	printf("\n~~~ Welcome To TSI ~~~\n");
+		printf("name is %s\npost is %s\n",name,rno);
 	pthread_t send_t;
 	if(pthread_create(&send_t , NULL , (void*)send_f, NULL)!=0)
 	{
