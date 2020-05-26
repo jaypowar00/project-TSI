@@ -19,7 +19,7 @@ volatile sig_atomic_t flag = 0;
 char string[5000];
 char name[32],rno[32],post[32];
 int sockfd=0,action=0;
-long int array_size = 1048576;				// 1048576 bits == 1 MB
+long int array_size = 524280;		// 524280 bits == 64 Kilobytes
 void str_overwite_stdout()
 {
 	printf("\r%s","> ");
@@ -41,7 +41,37 @@ void str_trim(char *arr, int len)
 void ctrl_c(){
 	flag = 1;
 }
-
+/*
+void recvFile(){
+		char fileName[50],location[5000],teacherName[50],directory[1000];
+		printf("[+] Entered recvFile()\n");
+		recv(sockfd,fileName,50,0);
+		recv(sockfd,teacherName,50,0);
+		
+			FILE *fp;
+		system("mkdir Files");
+		sprintf(directory,"mkdir Files/%s",teacherName);
+		system(directory);
+		char filearray[array_size];
+		
+		sprintf(location,"Files/%s/%s",teacherName,fileName);
+		
+		printf("[+] new program file created...(location: %s\n",location);
+		
+		fp = fopen(location,"w");
+		
+		bzero(filearray,sizeof(filearray));
+		
+		recv(sockfd,filearray,sizeof(filearray),0);
+		
+		fprintf(fp,filearray);
+		fclose(fp);
+		printf("code:\n%s\n",filearray);
+		
+		action=0;
+		
+}
+*/
 void send_f(){
 	char buffer[5000] = {};
 	char msg[5000+35] = {};
@@ -61,8 +91,6 @@ void send_f(){
 				}
 			}
 		}else if(action==1){
-		
-			sprintf(msg,"%s : %s\n",name,buffer);
 			
 			FILE *fp;
 			fp = fopen(buffer,"r");
@@ -71,9 +99,10 @@ void send_f(){
 				continue;
 			}
 			
-			send(sockfd,msg,strlen(msg),0);
+			send(sockfd,buffer,strlen(buffer),0);
 			
 			char nc,filearray[array_size];
+			bzero(filearray,sizeof(filearray));
 			int pointer=0;
 			printf("\n\nCode:\n");
 			while(fscanf(fp,"%c",&nc)!=EOF){
@@ -81,13 +110,25 @@ void send_f(){
 				pointer++;
 			}
 			printf("%s\n",filearray);
-			send(sockfd,filearray,strlen(filearray),0);
+			send(sockfd,filearray,sizeof(filearray),0);			
+			
 			action=0;
-		}else if(action==2){
-		
-		recvFile();
-		action=0;
-		
+		}else if(action==3){
+			send(sockfd,buffer,strlen(buffer),0);
+		}
+		else if(action==4){
+			
+			FILE *fp;
+			fp = fopen(buffer,"r");
+			if(fp==NULL){
+				printf("[+] failed to open given file ! Please enter the File Name again :\n");
+				continue;
+			}
+			send(sockfd,buffer,sizeof(buffer),0);
+			
+			printf("  [+] Sending %s file...[Press Enter To Continue...]\n",buffer);
+			
+			action =0;
 		}
 		bzero(buffer,5000);
 		bzero(msg,5000+35);
@@ -100,11 +141,49 @@ void recv_f(){
 	while(1){
 		int r = recv(sockfd,msg,5000,0);
 		if(r>0){
-			printf("%s\n",msg);
-			if(strcmp(msg,"[+] Enter file name: ")==0)
+			
+			if(strcmp(msg,"$[+]$incoming$file$from$admi$")!=0)
+				printf("%s\n",msg);
+			if(strcmp(msg,"[+] Enter file name: ")==0 && action==0)
 				action=1;
-			if(strcmp(msg,"$[+]$incoming$file$from$admi$")==0)
-				action=2;
+			if(strcmp(msg,"$[+]$incoming$file$from$admi$")==0){
+				printf("[+] >..>..>..>\n");
+				bzero(msg,5000);
+				char fileName[50],location[5000],directory[1000];
+				printf("[+] Entered recvFile()\n");
+				bzero(fileName,50);	
+				bzero(location,5000);
+				bzero(directory,1000);
+				
+				recv(sockfd,fileName,50,0);
+				
+				printf("[+] fileName:- %s\n",fileName);
+				sprintf(location,"Files/%s",fileName);
+				
+				char filearray[array_size];
+				
+				bzero(filearray,sizeof(filearray));
+				recv(sockfd,filearray,sizeof(filearray),0);
+				
+				system("mkdir Files");
+				sprintf(location,"Files/%s",fileName);
+				FILE *fp;
+				
+				fp = fopen(location,"w");
+				printf("[+] new program file created...(location: %s)\n",location);
+
+				fprintf(fp,filearray);
+				fclose(fp);
+				
+				printf("code:\n%s\n",filearray);
+				
+				}
+			if(strcmp(msg,"[+] Enter Student name or roll number: ")==0)
+				action=3;
+			if(strcmp(msg,"[+] student is present.")==0)
+				action=4;
+			if(strcmp(msg,"[+] student is absent.")==0)
+				action=0;
 			str_overwite_stdout();
 		} else if(r==0){
 			break;
@@ -113,29 +192,6 @@ void recv_f(){
 	}
 }
 
-void recvFile(){
-		char fileName[5000],location[5000];
-		
-		recv(sockfd,fileName,5000,0);
-		
-			FILE *fp;
-			
-		system("mkdir Files");
-		
-		char filearray[array_size];
-		
-		printf("[+] new program file created...(%s)",fileName);
-		
-		sprintf(location,"Files/%s",fileName);
-		
-		fp = fopen(fileName,"w");
-		
-		recv(sockfd,filearray,sizeof(filearray),0);
-		
-		fprintf(fp,filearray);
-		
-		fclose(fp);
-}
 
 int main(int argc,char **argv)
 {
@@ -182,7 +238,7 @@ whoAreYou:
 		}
 
 
-	struct sockaddr_in servaddr,cliaddr;
+	struct sockaddr_in servaddr;
 	sockfd = socket(AF_INET,SOCK_STREAM,0);
 	if(sockfd < 0)
 	{

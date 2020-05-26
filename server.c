@@ -18,7 +18,7 @@ static _Atomic unsigned int cli_count = 0;
 static long long int uid = 10;
 int adminactive = 0;
 int admin_private = 0;
-long int array_size = 1048576;		// 1048576 bits == 1 MB
+long int array_size = 524280;		// 524280 bits == 64 Kilobytes
 //client structure
 typedef struct{
 	struct sockaddr_in address;
@@ -131,7 +131,8 @@ int checkStudent(char *s, int uid){
 			{
 				if(strcmp(clients[i] -> rno,s)==0 || strcmp(clients[i] -> name,s)==0){
 					printf("[+] present\n");
-					return clients[i] -> uid;
+					pthread_mutex_unlock(&clients_mutex);
+					return i+1;
 				}
 			}
 		}
@@ -142,34 +143,61 @@ int checkStudent(char *s, int uid){
 	return 0;
 }
 
-void sendFileToNonAdmin(char *fileName, int uid, void *arg)
+void sendFileToNonAdmin(char *fileName, int i)
 {
-	client_t *cli = (client_t *)arg;
-	char buffer[5000];
+	
 	pthread_mutex_lock(&fileSending_mutex);
 	{
+			char nc,filearray[array_size];
+			bzero(filearray,sizeof(filearray));
+			int pointer;
+			pointer=0;
 			
-			send(clients[uid] -> sockfd,"$[+]$incoming$file$from$admi$",strlen("$[+]$incoming$file$from$admi$"),0);
-			send(clients[uid] -> sockfd , fileName , strlen(fileName) , 0);
+			printf("[+] Entered sendFileToNonAdmin()\n%s\n%d\n",fileName,i);
+			send(clients[i] -> sockfd,"$[+]$incoming$file$from$admi$",strlen("$[+]$incoming$file$from$admi$"),0);
+			send(clients[i] -> sockfd , fileName , sizeof(fileName) , 0);
 			
-			char filearray[array_size];
-			
-			recv(cli -> sockfd , filearray , strlen(filearray) ,0 );
+			printf("[+] Filename Sent...\n");
 			
 			printf("\n\nCode:\n");
 			
+			FILE *fp;
+			fp=fopen(fileName,"r");
+			
+			printf("\n\nCode:\n");
+			while(fscanf(fp,"%c",&nc)!=EOF){
+				filearray[pointer]=nc;
+				pointer++;
+			}
+			fclose(fp);
 			printf("%s\n",filearray);
 			
-			send(clients[uid] -> sockfd,filearray,strlen(filearray),0);
+			
+			send(clients[i] -> sockfd,filearray,sizeof(filearray),0);
 		
 	}
 	pthread_mutex_unlock(&fileSending_mutex);
 }
 
+char *nameOfAdmin(){
+
+	for(int i=0; i<MAX_CLIENTS; i++)
+	{
+		if(clients[i])
+		{
+			if(clients[i] -> admin == 1)
+			{
+				return clients[i] -> name;
+			}
+		}
+	}
+	return "Admin";
+	
+}
 
 void *handle_client(void *arg)
 {
-	char buff_out[5000],buff_out2[5000],buff_out3[5000],buff_name[50];
+	char buff_out[5000],buff_out2[5000],buff_name[50];
 	char name[32],rno[32];
 	int leave_flag = 0;
 	cli_count ++;
@@ -276,60 +304,71 @@ void *handle_client(void *arg)
 				  sscanf(buff_out,"%s : %s\n",buff_name,buff_out2);
 				  if(strcmp(buff_out2,"send")==0){
 				  if(!cli->admin){
+				  	char fileName[50];
 				  	printf("[+] send command received...from %s_%s\n",cli->name,cli->rno);
 				  	bzero(buff_out2,sizeof(buff_out2));
 				  	sprintf(buff_out2,"[+] Enter file name: ");
 				  	write(cli -> sockfd , buff_out2 , strlen(buff_out2));
-					  recv(cli->sockfd, buff_out , 5000 , 0);
-					  sscanf(buff_out,"%s : %s\n",buff_name,buff_out2);
-					  printf("[+] file name -> %s\n",buff_out2);
+					  recv(cli->sockfd, fileName , 5000 , 0);
+					  printf("[+] file name -> %s\n",fileName);
 					  
 					  // receiving program file from non-admin user to admin(i.e.to server)...
 					  
 					  {
-					  	char location[5000];
-					  	
+					  	char location[5000],directory[1000];
+					  	bzero(directory,sizeof(directory));
 					  	system("mkdir ServerFiles");
+					  	sprintf(directory,"mkdir ServerFiles/%s",nameOfAdmin());
+					  	system(directory);
+					  	bzero(directory,sizeof(directory));
+					  	sprintf(directory,"mkdir ServerFiles/%s/%s",nameOfAdmin(),cli->rno);
+					  	system(directory);
 					  	
-					  	sprintf(location,"ServerFiles/%s",buff_out2);
+					  	sprintf(location,"ServerFiles/%s/%s/%s",nameOfAdmin(),cli->rno,fileName);
+							char filearray[array_size];
 					  	
 					  	FILE *fp;
 							
-							char filearray[array_size];
-							
-							printf("[+] new program file created...(at location %s)",location);
-							
-					  	
-				  		recv(cli->sockfd,filearray,sizeof(filearray),0);
-				  		printf("[+] code:\n%s\n",filearray);
 					  	fp = fopen(location,"w");
-				  		fprintf(fp,filearray);
-				  		fclose(fp);
+							printf("[+] new program file created...(location: %s)",location);
+														
+					  	bzero(filearray,sizeof(filearray));
+							recv(cli->sockfd,filearray,sizeof(filearray),0);
+							
+							fprintf(fp,filearray);
 				  		
+				  		fclose(fp);			
+				  		printf("[+] received code:\n%s\n",filearray);	  		
 					  	
 					  	}
-					  	
 					 }
 					 
 					 if(cli->admin){
+					 	
 					 	printf("[+] send command received...from %s_%s\n",cli->name,cli->rno);
 				  	bzero(buff_out2,sizeof(buff_out2));
 				  	sprintf(buff_out2,"[+] Enter Student name or roll number: ");
 				  	write(cli -> sockfd , buff_out2 , strlen(buff_out2));
 				  	bzero(buff_out2,sizeof(buff_out2));
+				  	bzero(buff_out,sizeof(buff_out));
+				  	recv(cli->sockfd,buff_out,5000,0);
 				  	
-				  	int isStudent = checkStudent(buff_out2,cli->uid);
-				  	
+				  	int isStudent = checkStudent(buff_out,cli->uid);
 				  	if(isStudent != 0){
+				  		bzero(buff_out,5000);
+							sprintf(buff_out,"[+] student is present.");
+							send(cli->sockfd,buff_out,5000,0);
 				  	
 							sprintf(buff_out2,"[+] Enter file name: ");
 							write(cli -> sockfd , buff_out2 , strlen(buff_out2));
-							recv(cli->sockfd, buff_out , 5000 , 0);
-							sscanf(buff_out,"%s : %s\n",buff_name,buff_out2);
-							printf("[+] file name -> %s\n",buff_out2);
+							bzero(buff_out2,5000);
 							
+							recv(cli->sockfd,buff_out2,5000,0);
+										
 							// sending file to non-admin user ...
-							sendFileToNonAdmin(buff_out2,isStudent,cli);
+							sendFileToNonAdmin(buff_out2,isStudent-1);
+							
+							
 //							###########################################
 //							###########################################3
 //							###########################################
@@ -337,6 +376,10 @@ void *handle_client(void *arg)
 //###########################
 //#########################
 //###########################
+					  	}else{
+								bzero(buff_out,5000);
+								sprintf(buff_out,"[+] student is absent.");
+								send(cli->sockfd,buff_out,5000,0);
 					  	}
 					 }
 				  }else{
