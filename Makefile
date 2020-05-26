@@ -1,7 +1,7 @@
 
 all:
-	gcc -Wall -g3 -fsanitize=address -pthread server.c -o ser
-	gcc -Wall -g3 -fsanitize=address -pthread client.c -o cli
+	gcc -Wall -g3 -fsanitize=address -pthread TSI_server.c -o ser
+	gcc -Wall -g3 -fsanitize=address -pthread TSI_client.c -o cli
 	sleep 1
 	clear
 	
