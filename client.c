@@ -138,6 +138,7 @@ void send_f(){
 
 void recv_f(){
 	char	msg[5000];
+	bzero(msg,5000);
 	while(1){
 		int r = recv(sockfd,msg,5000,0);
 		if(r>0){
