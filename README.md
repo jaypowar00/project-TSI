@@ -4,7 +4,7 @@ In the connection, there can be communication as of in form of messages or there
 
 ___
 
-# Steps for executing Project T.S.I. :
+# Steps for executing Project T.S.I.:
 
 1. Very initial step is to run the command `make all` which compiles both the codes and creates their corresponding executables.
 2. The very next step, Teacher should open up 2 terminals; One for **hosting** the Server, Another for **joining** that server as a Teacher.
@@ -18,14 +18,14 @@ After These Steps, the TSI environment should be completely established !
 
 ___
 
-# How To Share Files? :
+# How To Share Files?:
 
-### A. Student To Teacher File Sharing :
+### A. Student To Teacher File Sharing:
   1. Type 'send' and hit enter.
   2. Specify the **Name of the File** to be sent (Must be in the same directory as the executables).
   3. The file will be sent to the Admin (Teacher).
 
-### B. Teacher To Student File Sharing :
+### B. Teacher To Student File Sharing:
   1. Type 'send' and hit enter.
   2. Specify **Roll Number of Student** to whom file supposed to be transfered.
   3. If the Student with a given Roll Number is present in the server, then it will ask for a filename, just specify the **Name of the File** which is to be shared.
@@ -33,7 +33,7 @@ ___
 
 ___
 
-# Major Bug :
+# Major Bug:
 
 Sometimes, during **File Sharing** operation the file does not get sent over to the receiver, at that time, there is no other way to recover this but for both the parties (Teacher & Student) to restart their programs in order to restart the whole environment !
 
@@ -42,3 +42,28 @@ Sometimes, during **File Sharing** operation the file does not get sent over to 
 
 ___
 
+# Screenshots:
+
+1. ![Sceenshot 1.1.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/1.1.png?raw=true)
+2. ![Sceenshot 1.2.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/1.2.png?raw=true)
+3. ![Sceenshot 2.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/2.png?raw=true)
+4. ![Sceenshot 3.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/3.png?raw=true)
+5. ![Sceenshot 4.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/4.png?raw=true)
+6. ![Sceenshot 5.1.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/5.1.png?raw=true)
+7. ![Sceenshot 5.2.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/5.2.png?raw=true)
+8. ![Sceenshot 5.3.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/5.3.png?raw=true)
+9. ![Sceenshot 6.1.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/6.1.png?raw=true)
+10. ![Sceenshot 6.2.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/6.2.png?raw=true)
+11. ![Sceenshot 7.1.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/7.1.png?raw=true)
+12. ![Sceenshot 7.2.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/7.2.png?raw=true)
+13. ![Sceenshot 7.3.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/7.3.png?raw=true)
+14. ![Sceenshot 7.4.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/7.4.png?raw=true)
+15. ![Sceenshot 8.1.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/8.1.png?raw=true)
+16. ![Sceenshot 8.2.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/8.2.png?raw=true)
+17. ![Sceenshot 9.1.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/9.1.png?raw=true)
+18. ![Sceenshot 9.2.png](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screenshots/9.2.png?raw=true)
+
+# Recording:
+[Click To Download Demo Video](https://github.com/jaypowar00/project-TSI/blob/master/Outputs/Screen%20Recording/TSI%20Demo.mp4?raw=true)
+
+___
